@@ -151,6 +151,25 @@ export async function getMonthAvailability(
   return result;
 }
 
+/** Public host profile + their active event types, for the /:username landing page. */
+export async function getPublicProfile(username: string) {
+  const user = await prisma.user.findUnique({
+    where: { username },
+    include: {
+      eventTypes: {
+        where: { isActive: true },
+        orderBy: { durationMinutes: 'asc' },
+        select: { id: true, title: true, slug: true, description: true, durationMinutes: true, color: true },
+      },
+    },
+  });
+  if (!user) throw new NotFoundError('Host not found');
+  return {
+    host: { name: user.name, username: user.username, timezone: user.timezone },
+    eventTypes: user.eventTypes,
+  };
+}
+
 /** Public-safe event details for the booking page left panel. */
 export async function getPublicEvent(username: string, eventSlug: string) {
   const { user, eventType } = await resolveBookingContext(username, eventSlug);

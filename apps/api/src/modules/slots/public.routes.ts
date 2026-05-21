@@ -20,7 +20,8 @@ const bookingLimiter = rateLimit({
   message: { error: { code: 'RATE_LIMITED', message: 'Too many requests. Please slow down.' } },
 });
 
-// Event details + availability.
+// Host profile + event details + availability.
+publicRouter.get('/:username', slots.getProfile);
 publicRouter.get('/:username/:eventSlug', slots.getEvent);
 publicRouter.get(
   '/:username/:eventSlug/slots',

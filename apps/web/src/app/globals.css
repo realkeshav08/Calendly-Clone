@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* shadcn-style design tokens. Light theme only — dark mode is out of scope. */
+@layer base {
+  :root {
+    --background: 210 40% 98%; /* #f8fafc page background */
+    --foreground: 0 0% 10%; /* #1a1a1a text primary */
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 10%;
+    --primary: 217 100% 50%; /* #0069ff brand blue */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 0 0% 10%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 220 9% 46%; /* #6b7280 text secondary */
+    --accent: 214 100% 96%; /* soft blue */
+    --accent-foreground: 217 100% 40%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 13% 91%; /* #e5e7eb */
+    --input: 220 13% 91%;
+    --ring: 217 100% 50%;
+    --radius: 0.5rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+  }
+}
