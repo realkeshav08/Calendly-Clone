@@ -88,16 +88,18 @@ export function BookingCalendar({
                 disabled={!hasSlots}
                 onClick={() => onSelectDate(key)}
                 className={cn(
-                  'flex h-10 w-10 items-center justify-center rounded-full text-sm font-medium transition',
-                  isSelected && 'bg-brand text-white',
-                  !isSelected && hasSlots && 'bg-brand-soft text-brand hover:bg-blue-100',
-                  !hasSlots && 'cursor-default text-gray-300',
-                  isToday && !isSelected && 'ring-1 ring-brand ring-offset-1',
+                  'relative flex h-10 w-10 items-center justify-center rounded-full text-sm transition',
+                  isSelected && 'bg-brand font-bold text-white shadow-sm',
+                  !isSelected && hasSlots && 'bg-brand-soft font-bold text-brand hover:bg-blue-200',
+                  !hasSlots && 'cursor-default font-normal text-gray-300',
                 )}
                 aria-label={key}
                 aria-pressed={isSelected}
               >
                 {day}
+                {isToday && !isSelected && (
+                  <span className="absolute bottom-1 h-1 w-1 rounded-full bg-brand" />
+                )}
               </button>
             </div>
           );

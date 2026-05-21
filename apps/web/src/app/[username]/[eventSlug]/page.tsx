@@ -78,8 +78,8 @@ export default function BookingPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
-      <div className="overflow-hidden rounded-xl border border-border bg-white shadow-sm md:grid md:grid-cols-[340px_1fr]">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
+      <div className="w-full max-w-5xl overflow-hidden rounded-2xl border border-border bg-white shadow-xl md:grid md:min-h-[600px] md:grid-cols-[360px_1fr]">
         <div className="border-b border-border p-8 md:border-b-0 md:border-r">
           <EventTypeHeader event={event} />
         </div>

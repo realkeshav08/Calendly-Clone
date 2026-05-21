@@ -1,85 +1,73 @@
-import { Prisma } from '@prisma/client';
-import { prisma } from '../../lib/prisma';
 import { NotFoundError, ConflictError } from '../../lib/errors';
+import type {
+  IEventTypeRepository,
+  EventTypeWithQuestions,
+} from '../../repositories/eventType.repository';
+import type { IBookingRepository } from '../../repositories/booking.repository';
 import type { CreateEventTypeInput, UpdateEventTypeInput } from 'shared';
 
-/** Event type with its custom questions ordered for display. */
-const includeQuestions = {
-  customQuestions: { orderBy: { order: 'asc' } },
-} satisfies Prisma.EventTypeInclude;
+/**
+ * Event-type use cases. Collaborates with two repositories: its own for CRUD and
+ * the booking repository to enforce the rule that an event type with bookings can't
+ * be hard-deleted. Both are injected as interfaces (DIP).
+ */
+export class EventTypeService {
+  constructor(
+    private readonly eventTypes: IEventTypeRepository,
+    private readonly bookings: IBookingRepository,
+  ) {}
 
-/** Lists all of a user's event types, newest first, with question counts usable by the UI. */
-export async function listEventTypes(userId: string) {
-  return prisma.eventType.findMany({
-    where: { userId },
-    orderBy: { createdAt: 'desc' },
-    include: includeQuestions,
-  });
-}
+  list(userId: string): Promise<EventTypeWithQuestions[]> {
+    return this.eventTypes.findManyByUser(userId);
+  }
 
-/** Fetches one event type scoped to the owner; throws if it isn't theirs. */
-export async function getEventType(userId: string, id: string) {
-  const eventType = await prisma.eventType.findFirst({
-    where: { id, userId },
-    include: includeQuestions,
-  });
-  if (!eventType) throw new NotFoundError('Event type not found');
-  return eventType;
-}
+  /** Fetches an event type scoped to its owner; throws 404 if it isn't theirs. */
+  async getForUser(userId: string, id: string): Promise<EventTypeWithQuestions> {
+    const eventType = await this.eventTypes.findByIdForUser(id, userId);
+    if (!eventType) throw new NotFoundError('Event type not found');
+    return eventType;
+  }
 
-/** Creates an event type plus any custom questions in a single nested write. */
-export async function createEventType(userId: string, data: CreateEventTypeInput) {
-  const { customQuestions, ...fields } = data;
-  return prisma.eventType.create({
-    data: {
-      ...fields,
+  create(userId: string, input: CreateEventTypeInput): Promise<EventTypeWithQuestions> {
+    const { customQuestions, scheduleId, ...fields } = input;
+    return this.eventTypes.create(
       userId,
-      customQuestions: customQuestions?.length ? { create: customQuestions } : undefined,
-    },
-    include: includeQuestions,
-  });
-}
-
-/**
- * Updates an event type. Custom questions use replace-all semantics: when an
- * `customQuestions` array is provided, the old set is deleted and recreated, so
- * the client can manage the list declaratively. Wrapped in a transaction so the
- * delete + recreate + update are atomic.
- */
-export async function updateEventType(userId: string, id: string, data: UpdateEventTypeInput) {
-  await getEventType(userId, id); // ownership check
-  const { customQuestions, ...fields } = data;
-
-  return prisma.$transaction(async (tx) => {
-    if (customQuestions) {
-      await tx.customQuestion.deleteMany({ where: { eventTypeId: id } });
-      if (customQuestions.length) {
-        await tx.customQuestion.createMany({
-          data: customQuestions.map((q) => ({ ...q, eventTypeId: id })),
-        });
-      }
-    }
-    return tx.eventType.update({
-      where: { id },
-      data: fields,
-      include: includeQuestions,
-    });
-  });
-}
-
-/**
- * Deletes an event type (cascades to its custom questions). Bookings have a
- * required FK to the event type, so we refuse to delete one that still has
- * bookings — the user should deactivate it (isActive=false) to hide it instead.
- * This keeps historical meeting records intact rather than orphaning them.
- */
-export async function deleteEventType(userId: string, id: string) {
-  await getEventType(userId, id); // ownership check
-  const bookingCount = await prisma.booking.count({ where: { eventTypeId: id } });
-  if (bookingCount > 0) {
-    throw new ConflictError(
-      'This event type has bookings. Toggle it off to hide it instead of deleting.',
+      { ...fields, schedule: scheduleId ? { connect: { id: scheduleId } } : undefined },
+      customQuestions,
     );
   }
-  await prisma.eventType.delete({ where: { id } });
+
+  async update(
+    userId: string,
+    id: string,
+    input: UpdateEventTypeInput,
+  ): Promise<EventTypeWithQuestions> {
+    await this.getForUser(userId, id); // ownership check
+    const { customQuestions, scheduleId, ...fields } = input;
+    return this.eventTypes.update(
+      id,
+      {
+        ...fields,
+        ...(scheduleId !== undefined
+          ? { schedule: scheduleId ? { connect: { id: scheduleId } } : { disconnect: true } }
+          : {}),
+      },
+      customQuestions,
+    );
+  }
+
+  /**
+   * Deletes an event type. Refuses if it still has bookings — deactivating
+   * (isActive=false) is the right way to retire one without orphaning history.
+   */
+  async delete(userId: string, id: string): Promise<void> {
+    await this.getForUser(userId, id); // ownership check
+    const bookingCount = await this.bookings.countByEventType(id);
+    if (bookingCount > 0) {
+      throw new ConflictError(
+        'This event type has bookings. Toggle it off to hide it instead of deleting.',
+      );
+    }
+    await this.eventTypes.delete(id);
+  }
 }

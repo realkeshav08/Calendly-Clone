@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import { prisma } from '../lib/prisma';
+import { container } from '../container';
 import { env } from '../config/env';
 import { AppError } from '../lib/errors';
 
@@ -29,7 +29,7 @@ declare global {
 
 export async function currentUser(req: Request, _res: Response, next: NextFunction): Promise<void> {
   try {
-    const user = await prisma.user.findUnique({ where: { id: env.DEFAULT_USER_ID } });
+    const user = await container.userRepository.findRawById(env.DEFAULT_USER_ID);
     if (!user) {
       throw new AppError(
         500,

@@ -15,7 +15,15 @@ export type BookingStatus = (typeof BOOKING_STATUSES)[number];
 
 /** 0 = Sunday … 6 = Saturday, matching JS `Date.getDay()` and the schema. */
 export const DAYS_OF_WEEK = [0, 1, 2, 3, 4, 5, 6] as const;
-export const DAY_LABELS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const;
+export const DAY_LABELS = [
+  'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+] as const;
 export const DAY_LABELS_SHORT = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'] as const;
 
 /** Allowed event durations offered in the UI (minutes). */

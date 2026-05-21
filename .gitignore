@@ -15,17 +15,29 @@ out/
 
 # prisma
 apps/api/prisma/*.db
+apps/api/prisma/*.db-journal
 
 # logs
 *.log
 npm-debug.log*
 pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # os / editor
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
+*.swp
+
+# deploy / tooling caches
+.vercel/
+.turbo/
+.cache/
+
+# local overrides
+*.local
 
 # misc
 coverage/

@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { createNeonAdapter } from '../src/lib/neonAdapter';
 
 /**
  * Idempotent seed. Wipes domain tables (dev-only data) and recreates a complete
@@ -7,8 +8,16 @@ import { PrismaClient } from '@prisma/client';
  *
  * After seeding it prints the demo user's id — copy that into DEFAULT_USER_ID so
  * the stubbed-auth currentUser middleware can find the user.
+ *
+ * Uses the Neon serverless adapter so it connects over port 443 like the app.
  */
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({ adapter: createNeonAdapter() });
+
+/**
+ * Fixed id for the demo user so re-seeding is deterministic: DEFAULT_USER_ID never
+ * changes between seeds or environments, so the stubbed-auth middleware keeps working.
+ */
+const DEMO_USER_ID = 'demo-user-0000000000000000';
 
 /** Returns a Date offset from now by a number of days, at a fixed UTC time. */
 function daysFromNow(days: number, hourUtc = 9, minute = 0): Date {
@@ -30,6 +39,7 @@ async function main(): Promise<void> {
 
   const user = await prisma.user.create({
     data: {
+      id: DEMO_USER_ID,
       email: 'demo@example.com',
       name: 'Demo User',
       username: 'demo',

@@ -1,5 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
-import * as service from './slots.service';
+import { container } from '../../container';
+
+const service = container.slotService;
 
 /** GET /api/public/:username — host profile + active event types. */
 export async function getProfile(req: Request, res: Response, next: NextFunction): Promise<void> {

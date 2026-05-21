@@ -1,22 +1,22 @@
-import { prisma } from '../../lib/prisma';
 import { NotFoundError } from '../../lib/errors';
+import type { IUserRepository, PublicUser } from '../../repositories/user.repository';
 import type { UpdateUserInput } from 'shared';
 
-/** Returns the public-safe profile for a user, or throws if missing. */
-export async function getUserById(id: string) {
-  const user = await prisma.user.findUnique({
-    where: { id },
-    select: { id: true, email: true, name: true, username: true, timezone: true },
-  });
-  if (!user) throw new NotFoundError('User not found');
-  return user;
-}
+/**
+ * Application logic for the current user's profile. Depends on the
+ * {@link IUserRepository} abstraction (Dependency Inversion) rather than Prisma,
+ * so it can be unit-tested with a fake repository.
+ */
+export class UserService {
+  constructor(private readonly users: IUserRepository) {}
 
-/** Updates the current user's editable profile fields. */
-export async function updateUser(id: string, data: UpdateUserInput) {
-  return prisma.user.update({
-    where: { id },
-    data,
-    select: { id: true, email: true, name: true, username: true, timezone: true },
-  });
+  async getById(id: string): Promise<PublicUser> {
+    const user = await this.users.findById(id);
+    if (!user) throw new NotFoundError('User not found');
+    return user;
+  }
+
+  update(id: string, data: UpdateUserInput): Promise<PublicUser> {
+    return this.users.update(id, data);
+  }
 }

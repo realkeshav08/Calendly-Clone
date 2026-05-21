@@ -1,0 +1,45 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm --filter api prisma generate)",
+      "Bash(pnpm prisma *)",
+      "Bash(pnpm exec *)",
+      "Bash(pnpm --filter web build)",
+      "PowerShell(Resolve-DnsName \"ep-blue-dew-aqwgh3jw.c-8.us-east-1.aws.neon.tech\" -ErrorAction SilentlyContinue)",
+      "PowerShell(Resolve-DnsName \"ep-blue-dew-aqwgh3jw-pooler.us-east-1.aws.neon.tech\" -ErrorAction SilentlyContinue)",
+      "Bash(pnpm add *)",
+      "Bash(pnpm migrate:http)",
+      "Bash(pnpm seed *)",
+      "Bash(pnpm dev *)",
+      "Bash(break)",
+      "Bash(node -e ' *)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:3000/event-types)",
+      "Bash(curl -s http://localhost:4000/api/me)",
+      "Bash(curl -s \"http://localhost:4000/api/bookings?filter=upcoming\")",
+      "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\).on\\('end',\\(\\)=>{const a=JSON.parse\\(d\\);console.log\\(a.length+' upcoming:',a.map\\(b=>b.inviteeName\\)\\)}\\)\")",
+      "Bash(echo \"TSC_DONE_exit=$?\")",
+      "Bash(pnpm --filter api build)",
+      "Bash(curl -s -o /dev/null -w \"API /api/me HTTP %{http_code}\\\\n\" http://localhost:4000/api/me)",
+      "Bash(curl -s -o /dev/null -w \"Web /event-types HTTP %{http_code}\\\\n\" http://localhost:3000/event-types)",
+      "Bash(curl -s -w \"\\\\nHTTP %{http_code}\\\\n\" http://localhost:4000/api/public/bookings/cmpfsip0m000264xakpwzsny8)",
+      "Bash(pnpm build *)",
+      "Bash(pnpm --filter api exec tsc -p tsconfig.json --noEmit)",
+      "Bash(echo \"API_TSC=$?\")",
+      "Bash(pnpm --filter web exec tsc --noEmit)",
+      "Bash(echo \"WEB_TSC=$?\")",
+      "Bash(pnpm audit *)",
+      "Bash(echo \"API_TSC_EXIT=$?\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3000/)",
+      "Bash(echo \"SHARED=$?\")",
+      "Bash(echo \"TYPECHECK=$?\")",
+      "Bash(echo \"BUILD=$?\")",
+      "Bash(pnpm --filter shared exec tsc -p tsconfig.json --noEmit)",
+      "Bash(echo \"shared=$?\")",
+      "Bash(echo \"api=$?\")",
+      "Bash(echo \"web=$?\")"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\ASUS\\.claude\\projects\\c--Users-ASUS-Desktop-Calendly-Clone\\memory"
+    ]
+  }
+}

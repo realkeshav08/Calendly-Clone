@@ -1,0 +1,30 @@
+# Render Blueprint for the Express API.
+# Deploy: New + → Blueprint → point at this repo. Render reads this file.
+# Set the `sync: false` secrets in the Render dashboard after the service is created.
+services:
+  - type: web
+    name: calendly-clone-api
+    runtime: node
+    region: virginia # match the Neon DB region for low latency
+    plan: free
+    rootDir: .
+    # corepack activates the pinned pnpm; build the shared package before the API.
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter shared build && pnpm --filter api build
+    startCommand: pnpm --filter api start
+    healthCheckPath: /health
+    # Applies any pending migrations on each deploy. Render can reach 5432, so the
+    # standard prisma migrate deploy works here (it's a no-op if already applied).
+    preDeployCommand: pnpm --filter api migrate:deploy
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false # paste the Neon connection string in the dashboard
+      - key: DEFAULT_USER_ID
+        value: demo-user-0000000000000000
+      - key: FRONTEND_URL
+        sync: false # set to the Vercel URL, e.g. https://calendly-clone.vercel.app
+      - key: RESEND_API_KEY
+        sync: false # optional — leave blank to disable email
+      - key: EMAIL_FROM
+        value: Calendly Clone <onboarding@resend.dev>

@@ -4,7 +4,10 @@ import type { ApiErrorBody } from '@/types/api';
  * Base URL of the Express API. Set NEXT_PUBLIC_API_URL in production (the Render
  * URL); falls back to the local API in development.
  */
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000').replace(
+  /\/+$/,
+  '',
+);
 
 /** Error thrown by the fetch wrapper, carrying the API's structured error code. */
 export class ApiError extends Error {

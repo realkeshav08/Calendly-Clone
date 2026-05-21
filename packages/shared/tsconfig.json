@@ -1,8 +1,10 @@
 {
+  // Shared Zod schemas + types, compiled to CommonJS (+ .d.ts) for the API and
+  // transpiled from source by Next for the web app.
   "compilerOptions": {
     "target": "ES2021",
-    "module": "CommonJS",
-    "moduleResolution": "Node",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "declaration": true,
     "outDir": "./dist",
     "rootDir": "./src",

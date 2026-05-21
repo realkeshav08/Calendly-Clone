@@ -8,7 +8,10 @@
 //  - IDs use cuid() for URL safety and to avoid leaking row counts.
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  // driverAdapters lets the client connect through Neon's serverless driver
+  // (WebSocket over port 443), which is required on networks that block 5432.
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {

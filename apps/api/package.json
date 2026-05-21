@@ -5,20 +5,24 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "prisma generate && tsc -p tsconfig.json",
+    "build": "prisma generate && tsc -p tsconfig.build.json",
     "start": "node dist/index.js",
     "lint": "eslint src --ext .ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "prisma:generate": "prisma generate",
     "migrate:dev": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
+    "migrate:http": "tsx prisma/deploy.ts",
     "seed": "tsx prisma/seed.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^0.10.0",
+    "@prisma/adapter-neon": "5.22.0",
     "@prisma/client": "^5.19.1",
     "cors": "^2.8.5",
     "date-fns": "^3.6.0",
@@ -27,10 +31,11 @@
     "express": "^4.19.2",
     "express-rate-limit": "^7.4.0",
     "helmet": "^7.1.0",
-    "nodemailer": "^6.9.14",
+    "nodemailer": "^8.0.7",
     "pino": "^9.3.2",
     "pino-http": "^10.2.0",
     "shared": "workspace:*",
+    "ws": "^8.18.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
@@ -38,6 +43,7 @@
     "@types/express": "^4.17.21",
     "@types/node": "^20.14.15",
     "@types/nodemailer": "^6.4.15",
+    "@types/ws": "^8.5.12",
     "pino-pretty": "^11.2.2",
     "prisma": "^5.19.1",
     "tsx": "^4.17.0",

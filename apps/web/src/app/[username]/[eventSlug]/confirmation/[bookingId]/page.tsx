@@ -57,7 +57,7 @@ export default function ConfirmationPage() {
               </Link>
               <span className="text-border">|</span>
               <Link
-                href={`/${booking.host.username}/${booking.eventType.slug}`}
+                href={`/bookings/${booking.id}/reschedule`}
                 className="text-brand hover:underline"
               >
                 Reschedule

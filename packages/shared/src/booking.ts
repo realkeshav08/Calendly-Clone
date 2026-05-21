@@ -3,9 +3,9 @@ import { ianaTimezone } from './primitives';
 
 /** A single answer to a custom question, keyed by the question's id. */
 export const bookingAnswerSchema = z.object({
-  questionId: z.string(),
-  question: z.string(),
-  answer: z.string(),
+  questionId: z.string().max(40),
+  question: z.string().max(200),
+  answer: z.string().max(2000),
 });
 
 /**

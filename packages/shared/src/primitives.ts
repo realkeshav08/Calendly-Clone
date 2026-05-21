@@ -27,9 +27,7 @@ export const timeOfDay = z
   .regex(TIME_OF_DAY_REGEX, 'Time must be in HH:mm 24-hour format');
 
 /** A calendar date in YYYY-MM-DD form (no time component). */
-export const isoDate = z
-  .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format');
+export const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format');
 
 /** A URL-safe slug: lowercase letters, numbers, and hyphens. */
 export const slug = z

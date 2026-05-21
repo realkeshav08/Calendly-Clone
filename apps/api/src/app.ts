@@ -20,15 +20,22 @@ import { publicRouter } from './modules/slots/public.routes';
 export function createApp(): Express {
   const app = express();
 
+  // Render (and most PaaS) put the app behind a reverse proxy. Trusting the first
+  // hop lets express-rate-limit and req.ip read the real client IP from
+  // X-Forwarded-For instead of rate-limiting every user as one proxy address.
+  app.set('trust proxy', 1);
+
   app.use(helmet());
   app.use(
     cors({
-      // In production lock CORS to the deployed frontend; in dev allow any origin.
+      // In production lock CORS to the deployed frontend(s); in dev allow any origin.
       origin: isProduction ? env.FRONTEND_URL.split(',').map((o) => o.trim()) : true,
       credentials: true,
     }),
   );
-  app.use(express.json());
+  // Cap request bodies — booking/event payloads are tiny, so a small limit blunts
+  // memory-exhaustion attempts via oversized JSON.
+  app.use(express.json({ limit: '64kb' }));
   app.use(pinoHttp({ logger }));
 
   // Liveness probe for Render / uptime checks.

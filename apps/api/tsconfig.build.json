@@ -1,0 +1,13 @@
+{
+  // Build config: emits compiled JS for the server only. Extends the base config
+  // but narrows the input to src/ (rootDir) so the output is dist/index.js — the
+  // prisma scripts and tests are run with tsx and don't need to be compiled.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "sourceMap": true
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist", "src/**/*.test.ts"]
+}
