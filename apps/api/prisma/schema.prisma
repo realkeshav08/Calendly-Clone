@@ -1,0 +1,134 @@
+// Prisma schema for the Calendly clone.
+//
+// Design notes (also documented in the README):
+//  - All booking instants are stored in UTC (`DateTime`). Conversion to a user's
+//    or invitee's timezone happens only at the display boundary.
+//  - Availability times-of-day are stored as "HH:mm" strings interpreted in the
+//    owning schedule's timezone — they are wall-clock times, not instants.
+//  - IDs use cuid() for URL safety and to avoid leaking row counts.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  username  String   @unique // used in public booking URL: /{username}/{eventSlug}
+  timezone  String   @default("Asia/Kolkata") // IANA timezone
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  eventTypes            EventType[]
+  availabilitySchedules AvailabilitySchedule[]
+  bookings              Booking[]
+}
+
+model EventType {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title            String
+  slug             String
+  description      String?
+  durationMinutes  Int
+  bufferBeforeMins Int      @default(0)
+  bufferAfterMins  Int      @default(0)
+  color            String   @default("#0069ff")
+  isActive         Boolean  @default(true)
+  scheduleId       String?
+  schedule         AvailabilitySchedule? @relation(fields: [scheduleId], references: [id])
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  bookings        Booking[]
+  customQuestions CustomQuestion[]
+
+  @@unique([userId, slug])
+  @@index([userId])
+}
+
+model AvailabilitySchedule {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  timezone  String // IANA timezone
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  weeklyHours   WeeklyHour[]
+  dateOverrides DateOverride[]
+  eventTypes    EventType[]
+
+  @@index([userId])
+}
+
+model WeeklyHour {
+  id         String               @id @default(cuid())
+  scheduleId String
+  schedule   AvailabilitySchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  dayOfWeek  Int // 0 = Sunday … 6 = Saturday
+  startTime  String // "09:00" — HH:mm in the schedule's timezone
+  endTime    String // "17:00"
+
+  @@index([scheduleId, dayOfWeek])
+}
+
+model DateOverride {
+  id            String               @id @default(cuid())
+  scheduleId    String
+  schedule      AvailabilitySchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  date          DateTime             @db.Date
+  isUnavailable Boolean              @default(false)
+  startTime     String?
+  endTime       String?
+
+  @@unique([scheduleId, date])
+}
+
+model Booking {
+  id                 String        @id @default(cuid())
+  eventTypeId        String
+  eventType          EventType     @relation(fields: [eventTypeId], references: [id])
+  hostId             String // denormalized for fast meetings-page queries
+  host               User          @relation(fields: [hostId], references: [id])
+  inviteeName        String
+  inviteeEmail       String
+  inviteeTimezone    String // IANA timezone the invitee booked from
+  startTime          DateTime // stored in UTC
+  endTime            DateTime // stored in UTC
+  status             BookingStatus @default(CONFIRMED)
+  cancellationReason String?
+  cancelledAt        DateTime?
+  notes              String?
+  answers            Json?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  @@index([hostId, startTime])
+  @@index([eventTypeId, startTime])
+  @@index([startTime])
+}
+
+enum BookingStatus {
+  CONFIRMED
+  CANCELLED
+  RESCHEDULED
+}
+
+model CustomQuestion {
+  id          String    @id @default(cuid())
+  eventTypeId String
+  eventType   EventType @relation(fields: [eventTypeId], references: [id], onDelete: Cascade)
+  question    String
+  isRequired  Boolean   @default(false)
+  order       Int       @default(0)
+}
