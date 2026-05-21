@@ -20,7 +20,12 @@ interface ErrorBody {
  * errors with their stack. Never leaks stack traces to clients in production.
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Express needs the 4-arg signature to recognize this as an error handler.
-export function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction): void {
+export function errorHandler(
+  err: unknown,
+  _req: Request,
+  res: Response,
+  _next: NextFunction,
+): void {
   let status = 500;
   let body: ErrorBody = {
     error: { code: 'INTERNAL_ERROR', message: 'Something went wrong.' },

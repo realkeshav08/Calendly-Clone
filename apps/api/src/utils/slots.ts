@@ -113,7 +113,11 @@ export function generateAvailableSlotsForDate(params: GenerateSlotsParams): stri
     const windowEndMin = hmToMinutes(window.endTime);
 
     // Step 3: back-to-back candidate starts that still fit fully inside the window.
-    for (let startMin = windowStartMin; startMin + durationMinutes <= windowEndMin; startMin += durationMinutes) {
+    for (
+      let startMin = windowStartMin;
+      startMin + durationMinutes <= windowEndMin;
+      startMin += durationMinutes
+    ) {
       const startHm = minutesToHm(startMin);
 
       // Step 4: independent wall-clock → UTC conversion (DST-safe).
