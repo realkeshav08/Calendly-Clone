@@ -57,10 +57,6 @@ export default function Home() {
             </p>
           </Link>
         </div>
-
-        <p className="mt-10 text-xs text-muted-foreground">
-          Calendly clone — take-home demo. Not affiliated with Calendly.
-        </p>
       </div>
     </main>
   );

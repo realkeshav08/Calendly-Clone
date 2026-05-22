@@ -3,40 +3,13 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  Menu,
-  X,
-  Plus,
-  Link2,
-  CalendarDays,
-  Clock,
-  Contact,
-  Workflow,
-  LayoutGrid,
-  Route,
-  CircleDollarSign,
-  BarChart3,
-  Crown,
-  CircleHelp,
-  type LucideIcon,
-} from 'lucide-react';
+import { Menu, X, Plus, Link2, CalendarDays, Clock, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const PRIMARY: { href: string; label: string; icon: LucideIcon }[] = [
   { href: '/event-types', label: 'Scheduling', icon: Link2 },
   { href: '/meetings', label: 'Meetings', icon: CalendarDays },
   { href: '/availability', label: 'Availability', icon: Clock },
-];
-const DECORATIVE: { label: string; icon: LucideIcon }[] = [
-  { label: 'Contacts', icon: Contact },
-  { label: 'Workflows', icon: Workflow },
-  { label: 'Integrations & apps', icon: LayoutGrid },
-  { label: 'Routing', icon: Route },
-];
-const BOTTOM: { label: string; icon: LucideIcon }[] = [
-  { label: 'Analytics', icon: BarChart3 },
-  { label: 'Admin center', icon: Crown },
-  { label: 'Help', icon: CircleHelp },
 ];
 
 const itemBase = 'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium';
@@ -133,25 +106,7 @@ export function MobileTopbar() {
               </Link>
             );
           })}
-          {DECORATIVE.map(({ label, icon: Icon }) => (
-            <span key={label} className={cn(itemBase, 'cursor-default text-foreground/80')}>
-              <Icon className="h-[18px] w-[18px]" />
-              {label}
-            </span>
-          ))}
         </nav>
-
-        <div className="mt-auto flex flex-col gap-1 border-t border-border pt-3">
-          <span className="mb-1 flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2 text-sm font-medium text-foreground">
-            <CircleDollarSign className="h-[18px] w-[18px]" /> Upgrade plan
-          </span>
-          {BOTTOM.map(({ label, icon: Icon }) => (
-            <span key={label} className={cn(itemBase, 'cursor-default text-foreground/80')}>
-              <Icon className="h-[18px] w-[18px]" />
-              {label}
-            </span>
-          ))}
-        </div>
       </aside>
     </>
   );
