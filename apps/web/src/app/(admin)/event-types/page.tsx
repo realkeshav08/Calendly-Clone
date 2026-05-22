@@ -12,7 +12,7 @@ import { CalendlyLoader } from '@/components/ui/calendly-loader';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 
-const TABS = ['Event types', 'Single-use links', 'Meeting polls'] as const;
+const TABS = ['Event types'] as const;
 
 export default function SchedulingPage() {
   const { data: eventTypes, isLoading, isError } = useEventTypes();
