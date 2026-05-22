@@ -1,10 +1,10 @@
 'use client';
 
-import { CalendarX2 } from 'lucide-react';
 import type { Booking } from '@/types/api';
 import { formatLongDate, formatTimeRange } from '@/lib/time';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+import { CalendlyLoader } from '@/components/ui/calendly-loader';
+import { MeetingsEmptyState } from './MeetingsEmptyState';
 
 interface MeetingsListProps {
   bookings: Booking[] | undefined;
@@ -12,6 +12,8 @@ interface MeetingsListProps {
   /** Whether to render a cancel action (upcoming only). */
   canCancel: boolean;
   onCancel: (id: string) => void;
+  /** Empty-state message, e.g. "No Upcoming Events". */
+  emptyLabel: string;
 }
 
 /** Groups bookings by their day (in the host's timezone) for date headers. */
@@ -31,27 +33,17 @@ function groupByDay(bookings: Booking[], timezone: string): Map<string, Booking[
  * shows the time range, event title, and invitee, with an optional cancel button.
  * Times render in the host's own timezone.
  */
-export function MeetingsList({ bookings, isLoading, canCancel, onCancel }: MeetingsListProps) {
-  if (isLoading) {
-    return (
-      <div className="space-y-3">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton key={i} className="h-20 w-full rounded-lg" />
-        ))}
-      </div>
-    );
-  }
+export function MeetingsList({
+  bookings,
+  isLoading,
+  canCancel,
+  onCancel,
+  emptyLabel,
+}: MeetingsListProps) {
+  if (isLoading) return <CalendlyLoader />;
 
   if (!bookings || bookings.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-white py-16 text-center">
-        <CalendarX2 className="mb-3 h-10 w-10 text-muted-foreground" />
-        <h3 className="text-lg font-semibold">No meetings here</h3>
-        <p className="mt-1 text-sm text-muted-foreground">
-          When people book time with you, it&apos;ll show up here.
-        </p>
-      </div>
-    );
+    return <MeetingsEmptyState label={emptyLabel} />;
   }
 
   // The host timezone is consistent across a host's bookings.

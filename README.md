@@ -7,9 +7,11 @@ A full-stack scheduling app that replicates Calendly's booking flow: hosts defin
 > - **API health check:** https://YOUR-API.onrender.com/health
 > - **Sample booking page:** https://YOUR-APP.vercel.app/demo/30min
 
-| Marketing homepage | Booking page | Admin dashboard |
+| Entry page | Booking page | Admin dashboard |
 |---|---|---|
-| ![Landing](docs/shots/landing.png) | ![Booking](docs/shots/booking2.png) | ![Admin](docs/shots/eventtypes.png) |
+| ![Entry](docs/shots/entry.png) | ![Booking](docs/shots/booking2.png) | ![Admin](docs/shots/admin.png) |
+
+The root (`/`) is a simple entry page — a short app description plus two links: **Admin Dashboard** (`/event-types`) and **Public Booking Page** (`/demo`). Auth is stubbed, so neither is gated.
 
 ---
 
@@ -34,16 +36,18 @@ A full-stack scheduling app that replicates Calendly's booking flow: hosts defin
 ## Features
 
 **Core**
-- ✅ Event types — create / edit / delete, enable-disable toggle, copy booking link
-- ✅ Availability — weekly hours editor (multiple windows per day), timezone per schedule
+- ✅ Event types — Calendly-style Scheduling page (search, list cards, copy link), create / edit / delete, enable-disable
+- ✅ Availability — weekly hours editor (multiple windows per day) with **List & Calendar views**, timezone per schedule
 - ✅ Public booking page — month calendar with available-day dots, timezone auto-detect, Calendly's signature slot→**Confirm** split interaction, details form
 - ✅ Booking confirmation page + public cancel link
-- ✅ Meetings dashboard — Upcoming / Past tabs, cancel
+- ✅ Meetings dashboard — **Upcoming / Past / Date Range** tabs with empty states, cancel
 - ✅ **Timezone-correct slot generation** (UTC in DB, converted at the display boundary)
 - ✅ **Double-booking prevention** via a Serializable transaction
 
+**UI fidelity** — Calendly-accurate left sidebar + account bar (desktop), hamburger drawer (mobile), and a Calendly-style loading mark.
+
 **Bonus (implemented)**
-- ✅ Fully responsive (mobile bottom-nav, stacked booking layout)
+- ✅ Fully responsive (mobile hamburger drawer, stacked booking layout)
 - ✅ Multiple availability schedules (pick per event type)
 - ✅ Buffer time before/after (in the slot algorithm + event form)
 - ✅ Date overrides (one-off unavailable days / custom hours)
@@ -323,7 +327,12 @@ Calendly Clone/
 │   │       ├── utils/            # slots.ts (pure algorithm) + slots.test.ts, timezone.ts
 │   │       ├── lib/              # prisma, neonAdapter, logger, errors
 │   │       └── container.ts      # composition root (DI wiring)
-│   └── web/                      # Next.js App Router (marketing + admin + public booking)
+│   └── web/                      # Next.js App Router
+│       └── src/
+│           ├── app/              # entry (/), (admin) dashboard, [username] public booking
+│           ├── components/       # layout (Calendly sidebar/account/mobile drawer), event-types, availability, booking, meetings, ui
+│           ├── hooks/            # TanStack Query data hooks
+│           └── lib/              # api client, query client, time/timezone helpers
 ├── packages/
 │   └── shared/                   # Zod schemas + shared types
 ├── render.yaml                   # API deploy blueprint
@@ -364,6 +373,6 @@ Already provisioned. Copy the connection string (`postgresql://…@…neon.tech/
 
 ### 4. Wire CORS + verify
 1. Back in Render, set `FRONTEND_URL` to the Vercel URL and **redeploy** the API (CORS is locked to it in production).
-2. Open the Vercel URL → landing loads → `/event-types` (admin) → `/demo/30min` books end-to-end → meeting appears under **Upcoming**.
+2. Open the Vercel URL → entry page loads → **Admin Dashboard** (`/event-types`) and **Public Booking Page** (`/demo`) → `/demo/30min` books end-to-end → meeting appears under **Upcoming**.
 
 > **Note on the database & port 5432:** local dev on a network that blocks 5432 must apply migrations with `pnpm --filter api migrate:http` (Neon serverless driver over 443). Render has no such restriction, so the standard `prisma migrate deploy` works there.

@@ -33,3 +33,27 @@
     font-feature-settings: 'rlig' 1, 'calt' 1;
   }
 }
+
+/* Calendly-style loader: each segment fades/scales in sequence. */
+@keyframes cl-pulse {
+  0%,
+  70%,
+  100% {
+    opacity: 0.3;
+  }
+  35% {
+    opacity: 1;
+  }
+}
+.cl-dot {
+  animation: cl-pulse 1.1s infinite ease-in-out;
+}
+.cl-d1 {
+  animation-delay: 0s;
+}
+.cl-d2 {
+  animation-delay: 0.18s;
+}
+.cl-d3 {
+  animation-delay: 0.36s;
+}

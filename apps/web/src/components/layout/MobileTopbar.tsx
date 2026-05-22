@@ -3,30 +3,54 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, Calendar, CalendarClock, Clock, CalendarCheck2 } from 'lucide-react';
+import {
+  Menu,
+  X,
+  Plus,
+  Link2,
+  CalendarDays,
+  Clock,
+  Contact,
+  Workflow,
+  LayoutGrid,
+  Route,
+  CircleDollarSign,
+  BarChart3,
+  Crown,
+  CircleHelp,
+  type LucideIcon,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useMe } from '@/hooks/useMe';
 
-const NAV_ITEMS = [
-  { href: '/event-types', label: 'Event Types', icon: Calendar },
-  { href: '/meetings', label: 'Scheduled Events', icon: CalendarClock },
+const PRIMARY: { href: string; label: string; icon: LucideIcon }[] = [
+  { href: '/event-types', label: 'Scheduling', icon: Link2 },
+  { href: '/meetings', label: 'Meetings', icon: CalendarDays },
   { href: '/availability', label: 'Availability', icon: Clock },
-] as const;
+];
+const DECORATIVE: { label: string; icon: LucideIcon }[] = [
+  { label: 'Contacts', icon: Contact },
+  { label: 'Workflows', icon: Workflow },
+  { label: 'Integrations & apps', icon: LayoutGrid },
+  { label: 'Routing', icon: Route },
+];
+const BOTTOM: { label: string; icon: LucideIcon }[] = [
+  { label: 'Analytics', icon: BarChart3 },
+  { label: 'Admin center', icon: Crown },
+  { label: 'Help', icon: CircleHelp },
+];
+
+const itemBase = 'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium';
 
 /**
- * Mobile-only top bar with a hamburger that opens a slide-in nav drawer (the
- * desktop sidebar is hidden below `md`). The drawer closes on route change, on
- * Escape, and when the backdrop is tapped.
+ * Mobile top bar (hamburger on the left, then logo) + slide-in nav drawer that
+ * mirrors Calendly's mobile menu: + Create, the primary sections, the decorative
+ * items, and a bottom group. Closes on route change, Escape, and backdrop tap.
  */
 export function MobileTopbar() {
   const pathname = usePathname();
-  const { data: user } = useMe();
   const [open, setOpen] = useState(false);
 
-  // Close the drawer whenever the route changes.
   useEffect(() => setOpen(false), [pathname]);
-
-  // Close on Escape and lock body scroll while the drawer is open.
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
@@ -50,13 +74,14 @@ export function MobileTopbar() {
         >
           <Menu className="h-5 w-5" />
         </button>
-        <Link href="/event-types" className="flex items-center gap-2">
-          <CalendarCheck2 className="h-5 w-5 text-brand" />
-          <span className="font-bold text-[#0a2540]">Calendly</span>
+        <Link href="/event-types" className="flex items-center gap-1.5">
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand text-white">
+            <CalendarDays className="h-3.5 w-3.5" />
+          </span>
+          <span className="text-lg font-bold text-brand">Calendly</span>
         </Link>
       </header>
 
-      {/* Backdrop */}
       <div
         className={cn(
           'fixed inset-0 z-40 bg-black/40 transition-opacity md:hidden',
@@ -66,56 +91,67 @@ export function MobileTopbar() {
         aria-hidden="true"
       />
 
-      {/* Slide-in drawer */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 flex w-72 max-w-[80%] flex-col bg-white shadow-xl transition-transform md:hidden',
+          'fixed inset-y-0 left-0 z-50 flex w-72 max-w-[82%] flex-col overflow-y-auto bg-white px-3 py-4 shadow-xl transition-transform md:hidden',
           open ? 'translate-x-0' : '-translate-x-full',
         )}
         role="dialog"
-        aria-label="Navigation"
         aria-modal="true"
+        aria-label="Navigation"
       >
-        <div className="flex items-center justify-between border-b border-border px-5 py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand text-sm font-semibold text-white">
-              {user ? user.name.charAt(0).toUpperCase() : '·'}
-            </div>
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-foreground">
-                {user?.name ?? 'Loading…'}
-              </p>
-              {user && <p className="truncate text-xs text-muted-foreground">@{user.username}</p>}
-            </div>
-          </div>
-          <button
-            type="button"
-            aria-label="Close menu"
-            onClick={() => setOpen(false)}
-            className="rounded-md p-2 text-muted-foreground hover:bg-gray-100"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+        <button
+          type="button"
+          aria-label="Close menu"
+          onClick={() => setOpen(false)}
+          className="mb-2 w-fit rounded-md p-2 text-muted-foreground hover:bg-gray-100"
+        >
+          <X className="h-5 w-5" />
+        </button>
 
-        <nav className="flex flex-col gap-1 p-3">
-          {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+        <Link
+          href="/event-types/new"
+          className="mb-3 flex items-center justify-center gap-2 rounded-full border border-border py-2.5 text-sm font-semibold text-foreground hover:border-brand hover:text-brand"
+        >
+          <Plus className="h-4 w-4" /> Create
+        </Link>
+
+        <nav className="flex flex-col gap-1">
+          {PRIMARY.map(({ href, label, icon: Icon }) => {
             const active = pathname.startsWith(href);
             return (
               <Link
                 key={href}
                 href={href}
                 className={cn(
-                  'flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors',
+                  itemBase,
                   active ? 'bg-blue-50 text-blue-700' : 'text-foreground hover:bg-gray-50',
                 )}
               >
-                <Icon className="h-4 w-4" />
+                <Icon className="h-[18px] w-[18px]" />
                 {label}
               </Link>
             );
           })}
+          {DECORATIVE.map(({ label, icon: Icon }) => (
+            <span key={label} className={cn(itemBase, 'cursor-default text-foreground/80')}>
+              <Icon className="h-[18px] w-[18px]" />
+              {label}
+            </span>
+          ))}
         </nav>
+
+        <div className="mt-auto flex flex-col gap-1 border-t border-border pt-3">
+          <span className="mb-1 flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2 text-sm font-medium text-foreground">
+            <CircleDollarSign className="h-[18px] w-[18px]" /> Upgrade plan
+          </span>
+          {BOTTOM.map(({ label, icon: Icon }) => (
+            <span key={label} className={cn(itemBase, 'cursor-default text-foreground/80')}>
+              <Icon className="h-[18px] w-[18px]" />
+              {label}
+            </span>
+          ))}
+        </div>
       </aside>
     </>
   );

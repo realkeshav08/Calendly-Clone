@@ -1,19 +1,22 @@
-import { Topbar } from '@/components/layout/Topbar';
+import { Sidebar } from '@/components/layout/Sidebar';
 import { MobileTopbar } from '@/components/layout/MobileTopbar';
+import { AccountBar } from '@/components/layout/AccountBar';
 
 /**
- * Admin shell shared by Event Types, Meetings, and Availability: Calendly-style
- * top navigation on desktop (logo + tabs + account), a hamburger top bar + drawer
- * on mobile, and a centered off-white content area.
+ * Admin shell modeled on Calendly's dashboard: a left sidebar on desktop with a
+ * top-right account bar, and a hamburger top bar + drawer on mobile.
  */
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-background">
-      <MobileTopbar />
-      <Topbar />
-      <main className="px-4 py-6 md:px-8 md:py-8">
-        <div className="mx-auto max-w-5xl">{children}</div>
-      </main>
+    <div className="flex min-h-screen bg-background">
+      <Sidebar />
+      <div className="flex min-h-screen flex-1 flex-col">
+        <MobileTopbar />
+        <AccountBar />
+        <main className="flex-1 px-4 pb-12 pt-4 md:px-10 md:pt-0">
+          <div className="mx-auto max-w-5xl">{children}</div>
+        </main>
+      </div>
     </div>
   );
 }
