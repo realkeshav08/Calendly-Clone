@@ -96,6 +96,14 @@ async function main(): Promise<void> {
       durationMinutes: 30,
       color: '#16a34a',
       scheduleId: workingHours.id,
+      // Sample custom questions so the feature is visible on the primary demo
+      // booking link (/demo/30min) without having to add them in the UI first.
+      customQuestions: {
+        create: [
+          { question: 'What would you like to discuss?', isRequired: true, order: 0 },
+          { question: 'Anything I should prepare in advance?', isRequired: false, order: 1 },
+        ],
+      },
     },
   });
 
@@ -110,6 +118,9 @@ async function main(): Promise<void> {
       bufferAfterMins: 10,
       color: '#9333ea',
       scheduleId: workingHours.id,
+      customQuestions: {
+        create: [{ question: 'What is the main goal for this call?', isRequired: true, order: 0 }],
+      },
     },
   });
 

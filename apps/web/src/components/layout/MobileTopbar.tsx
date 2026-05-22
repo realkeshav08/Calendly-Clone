@@ -40,11 +40,7 @@ export function MobileTopbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-white px-4 md:hidden">
-        <Link href="/event-types" className="flex items-center gap-2">
-          <CalendarCheck2 className="h-5 w-5 text-brand" />
-          <span className="font-bold text-[#0a2540]">Calendly</span>
-        </Link>
+      <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border bg-white px-3 md:hidden">
         <button
           type="button"
           aria-label="Open menu"
@@ -54,6 +50,10 @@ export function MobileTopbar() {
         >
           <Menu className="h-5 w-5" />
         </button>
+        <Link href="/event-types" className="flex items-center gap-2">
+          <CalendarCheck2 className="h-5 w-5 text-brand" />
+          <span className="font-bold text-[#0a2540]">Calendly</span>
+        </Link>
       </header>
 
       {/* Backdrop */}

@@ -13,7 +13,9 @@ services:
     # build (prisma generate + tsc) and migrate step need them. Build shared first,
     # then apply migrations. We use migrate:http (Neon serverless driver, idempotent)
     # rather than a preDeployCommand because the free tier doesn't support pre-deploy.
-    buildCommand: corepack enable && pnpm install --frozen-lockfile --prod=false && pnpm --filter shared build && pnpm --filter api build && pnpm --filter api migrate:http
+    # The seed runs only when RUN_SEED=true (toggle it in the dashboard for a one-off
+    # re-seed, then set it back to false — the seed wipes and recreates demo data).
+    buildCommand: 'corepack enable && pnpm install --frozen-lockfile --prod=false && pnpm --filter shared build && pnpm --filter api build && pnpm --filter api migrate:http && if [ "$RUN_SEED" = "true" ]; then pnpm --filter api seed; fi'
     startCommand: pnpm --filter api start
     healthCheckPath: /health
     envVars:
@@ -23,9 +25,11 @@ services:
         sync: false # paste the Neon connection string in the dashboard
       - key: DEFAULT_USER_ID
         value: demo-user-0000000000000000
+      - key: RUN_SEED
+        value: 'false' # set true for a one-off re-seed on next deploy, then back to false
       - key: FRONTEND_URL
         sync: false # set to the Vercel URL, e.g. https://calendly-clone.vercel.app
       - key: RESEND_API_KEY
         sync: false # optional — leave blank to disable email
       - key: EMAIL_FROM
-        value: Calendly Clone <onboarding@resend.dev>
+        value: Calendly Clone <noreply@keshavkashyap.me>
