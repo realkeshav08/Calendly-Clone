@@ -15,7 +15,7 @@ import { useEventTypes } from '@/hooks/useEventTypes';
 import { cn } from '@/lib/utils';
 import type { WeeklyHourInput } from 'shared';
 
-const TABS = ['Schedules', 'Calendar settings', 'Advanced settings'] as const;
+const TABS = ['Schedules'] as const;
 
 export default function AvailabilityPage() {
   const { data: schedules, isLoading, isError } = useSchedules();
