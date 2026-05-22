@@ -39,8 +39,8 @@ Thumbs.db
 # local overrides
 *.local
 
-# Claude Code local settings (keep shared .claude/settings.json + commands)
-.claude/settings.local.json
+# Claude Code agent tooling (not part of the app)
+.claude/
 
 # misc
 coverage/
