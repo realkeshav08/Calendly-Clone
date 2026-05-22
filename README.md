@@ -345,7 +345,7 @@ Already provisioned. Copy the connection string (`postgresql://…@…neon.tech/
    - `DATABASE_URL` — the Neon string
    - `FRONTEND_URL` — your Vercel URL (set after step 3; e.g. `https://calendly-clone.vercel.app`)
    - `RESEND_API_KEY` — optional (leave blank to disable email)
-3. Deploy. The build runs `pnpm install → build shared → build api`, and `preDeployCommand` runs `prisma migrate deploy` (Render can reach port 5432).
+3. Deploy. The build runs `pnpm install → build shared → build api → migrate:http` (migrations are applied as the final build step, since Render's free tier doesn't support a pre-deploy command).
 4. **Seed once** via the Render **Shell** tab: `pnpm --filter api seed`. (Don't automate this — the seed wipes and recreates data.)
 5. Note the API URL, e.g. `https://calendly-clone-api.onrender.com`. Health check: `/health`.
 

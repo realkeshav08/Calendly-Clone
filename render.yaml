@@ -10,13 +10,12 @@ services:
     rootDir: .
     # corepack activates the pinned pnpm; --prod=false forces devDependencies
     # (prisma, typescript, tsx) to install despite NODE_ENV=production, since the
-    # build (prisma generate + tsc) and migrate step need them. Build shared first.
-    buildCommand: corepack enable && pnpm install --frozen-lockfile --prod=false && pnpm --filter shared build && pnpm --filter api build
+    # build (prisma generate + tsc) and migrate step need them. Build shared first,
+    # then apply migrations. We use migrate:http (Neon serverless driver, idempotent)
+    # rather than a preDeployCommand because the free tier doesn't support pre-deploy.
+    buildCommand: corepack enable && pnpm install --frozen-lockfile --prod=false && pnpm --filter shared build && pnpm --filter api build && pnpm --filter api migrate:http
     startCommand: pnpm --filter api start
     healthCheckPath: /health
-    # Applies any pending migrations on each deploy. Render can reach 5432, so the
-    # standard prisma migrate deploy works here (it's a no-op if already applied).
-    preDeployCommand: pnpm --filter api migrate:deploy
     envVars:
       - key: NODE_ENV
         value: production
