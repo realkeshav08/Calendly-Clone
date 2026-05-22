@@ -334,7 +334,32 @@ Calendly Clone/
 
 ## Deployment
 
-1. **Database (Neon):** create a project, copy the connection string.
-2. **Backend (Render):** New → **Blueprint** → this repo (reads `render.yaml`). Set `DATABASE_URL` and `FRONTEND_URL` in the dashboard. The `preDeployCommand` runs migrations.
-3. **Frontend (Vercel):** Import the repo, set **Root Directory** = `apps/web`, **Build Command** = `pnpm --filter shared build && pnpm --filter web build`, and env `NEXT_PUBLIC_API_URL` = the Render URL.
-4. **Verify:** open the Vercel URL → admin loads → `/demo/30min` books end-to-end → meeting appears under Upcoming.
+Three pieces: **Neon** (database) → **Render** (API) → **Vercel** (web). The repo must be pushed to a public GitHub repo first.
+
+### 1. Database — Neon
+Already provisioned. Copy the connection string (`postgresql://…@…neon.tech/neondb?sslmode=require`); you'll paste it into Render as `DATABASE_URL`.
+
+### 2. Backend API — Render
+1. **New → Blueprint**, select this repo. Render reads [`render.yaml`](render.yaml) and provisions a Node web service in the **virginia** region (matching Neon's `us-east-1`).
+2. Set the `sync: false` secrets in the dashboard:
+   - `DATABASE_URL` — the Neon string
+   - `FRONTEND_URL` — your Vercel URL (set after step 3; e.g. `https://calendly-clone.vercel.app`)
+   - `RESEND_API_KEY` — optional (leave blank to disable email)
+3. Deploy. The build runs `pnpm install → build shared → build api`, and `preDeployCommand` runs `prisma migrate deploy` (Render can reach port 5432).
+4. **Seed once** via the Render **Shell** tab: `pnpm --filter api seed`. (Don't automate this — the seed wipes and recreates data.)
+5. Note the API URL, e.g. `https://calendly-clone-api.onrender.com`. Health check: `/health`.
+
+> Render free tier sleeps after inactivity; the first request after idle takes ~50s to wake.
+
+### 3. Frontend — Vercel
+1. **Add New → Project**, import the repo.
+2. **Root Directory:** `apps/web`. Framework auto-detects as Next.js.
+3. **Build Command (override):** `pnpm --filter shared build && pnpm --filter web build`
+4. **Environment Variable:** `NEXT_PUBLIC_API_URL` = your Render API URL.
+5. Deploy → note the Vercel URL.
+
+### 4. Wire CORS + verify
+1. Back in Render, set `FRONTEND_URL` to the Vercel URL and **redeploy** the API (CORS is locked to it in production).
+2. Open the Vercel URL → landing loads → `/event-types` (admin) → `/demo/30min` books end-to-end → meeting appears under **Upcoming**.
+
+> **Note on the database & port 5432:** local dev on a network that blocks 5432 must apply migrations with `pnpm --filter api migrate:http` (Neon serverless driver over 443). Render has no such restriction, so the standard `prisma migrate deploy` works there.

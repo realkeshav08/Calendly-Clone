@@ -8,8 +8,10 @@ services:
     region: virginia # match the Neon DB region for low latency
     plan: free
     rootDir: .
-    # corepack activates the pinned pnpm; build the shared package before the API.
-    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter shared build && pnpm --filter api build
+    # corepack activates the pinned pnpm; --prod=false forces devDependencies
+    # (prisma, typescript, tsx) to install despite NODE_ENV=production, since the
+    # build (prisma generate + tsc) and migrate step need them. Build shared first.
+    buildCommand: corepack enable && pnpm install --frozen-lockfile --prod=false && pnpm --filter shared build && pnpm --filter api build
     startCommand: pnpm --filter api start
     healthCheckPath: /health
     # Applies any pending migrations on each deploy. Render can reach 5432, so the

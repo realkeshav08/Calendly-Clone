@@ -39,6 +39,9 @@ Thumbs.db
 # local overrides
 *.local
 
+# Claude Code local settings (keep shared .claude/settings.json + commands)
+.claude/settings.local.json
+
 # misc
 coverage/
 *.tsbuildinfo
