@@ -1,16 +1,31 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Check, List, CalendarDays, MoreVertical } from 'lucide-react';
+import { Check, List, CalendarDays, MoreVertical, Pencil, Copy } from 'lucide-react';
 import { WeeklyHoursEditor } from '@/components/availability/WeeklyHoursEditor';
 import { DateOverridesEditor } from '@/components/availability/DateOverridesEditor';
 import { AvailabilityCalendar } from '@/components/availability/AvailabilityCalendar';
 import { TimezoneSelect } from '@/components/availability/TimezoneSelect';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { CalendlyLoader } from '@/components/ui/calendly-loader';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { useSchedules, useUpdateSchedule } from '@/hooks/useAvailability';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { useSchedules, useUpdateSchedule, useCreateSchedule } from '@/hooks/useAvailability';
 import { useEventTypes } from '@/hooks/useEventTypes';
 import { cn } from '@/lib/utils';
 import type { WeeklyHourInput } from 'shared';
@@ -28,7 +43,43 @@ export default function AvailabilityPage() {
 
   const selected = schedules?.find((s) => s.id === selectedId) ?? schedules?.[0];
   const update = useUpdateSchedule(selected?.id ?? '');
+  const createSchedule = useCreateSchedule();
   const activeOn = eventTypes?.filter((e) => e.scheduleId === selected?.id).length ?? 0;
+
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameValue, setRenameValue] = useState('');
+
+  function openRename() {
+    setRenameValue(selected?.name ?? '');
+    setRenameOpen(true);
+  }
+
+  /** Rename the current schedule; invalidating the query syncs the selector,
+   * header, and the event-type form's schedule picker everywhere. */
+  async function doRename() {
+    const name = renameValue.trim();
+    if (!selected || !name) return;
+    await update.mutateAsync({ name });
+    setRenameOpen(false);
+  }
+
+  /** Duplicate the current schedule (name + timezone + weekly hours) and switch to it. */
+  function doDuplicate() {
+    if (!selected) return;
+    createSchedule.mutate(
+      {
+        name: `${selected.name} (copy)`,
+        timezone: selected.timezone,
+        isDefault: false,
+        weeklyHours: selected.weeklyHours.map((h) => ({
+          dayOfWeek: h.dayOfWeek,
+          startTime: h.startTime,
+          endTime: h.endTime,
+        })),
+      },
+      { onSuccess: (created) => setSelectedId(created.id) },
+    );
+  }
 
   useEffect(() => {
     if (!selected) return;
@@ -125,7 +176,22 @@ export default function AvailabilityPage() {
                   <CalendarDays className="h-4 w-4" /> Calendar
                 </button>
               </div>
-              <MoreVertical className="h-5 w-5 text-muted-foreground" />
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  aria-label="Schedule options"
+                  className="rounded-md p-1.5 text-muted-foreground hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <MoreVertical className="h-5 w-5" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={openRename}>
+                    <Pencil className="h-4 w-4" /> Rename
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={doDuplicate}>
+                    <Copy className="h-4 w-4" /> Duplicate
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
 
@@ -163,11 +229,44 @@ export default function AvailabilityPage() {
                 </div>
               </div>
             ) : (
-              <AvailabilityCalendar hours={hours} timezone={timezone} />
+              <AvailabilityCalendar
+                hours={hours}
+                dateOverrides={selected.dateOverrides}
+                timezone={timezone}
+              />
             )}
           </div>
         </div>
       )}
+
+      <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Rename schedule</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="schedule-name">Schedule name</Label>
+            <Input
+              id="schedule-name"
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') void doRename();
+              }}
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRenameOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={doRename} disabled={!renameValue.trim() || update.isPending}>
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+

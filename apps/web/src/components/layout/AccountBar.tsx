@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { UserPlus, ChevronDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { useMe } from '@/hooks/useMe';
 import {
   DropdownMenu,
@@ -11,9 +11,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 /**
- * Desktop top-right account control, mirroring Calendly's header: an invite-user
- * icon and an avatar + chevron that opens a small account menu. Hidden on mobile,
- * where MobileTopbar carries the identity.
+ * Desktop top-right account control: an avatar + chevron that opens a small
+ * account menu. Hidden on mobile, where MobileTopbar carries the identity.
  */
 export function AccountBar() {
   const { data: user } = useMe();
@@ -21,15 +20,6 @@ export function AccountBar() {
 
   return (
     <div className="hidden h-16 items-center justify-end gap-4 px-6 md:flex">
-      <button
-        type="button"
-        aria-label="Invite users"
-        title="Not part of this demo"
-        className="text-muted-foreground hover:text-foreground"
-      >
-        <UserPlus className="h-5 w-5" />
-      </button>
-
       <DropdownMenu>
         <DropdownMenuTrigger className="flex items-center gap-1.5 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-sm font-semibold text-foreground">

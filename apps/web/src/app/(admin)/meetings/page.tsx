@@ -4,7 +4,6 @@ import { useMemo, useState } from 'react';
 import { HelpCircle, ChevronDown, Upload, SlidersHorizontal } from 'lucide-react';
 import { MeetingsList } from '@/components/meetings/MeetingsList';
 import { DateRangePicker, type DateRange } from '@/components/meetings/DateRangePicker';
-import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { toDateKey } from '@/lib/time';
 import { useBookings, useCancelBooking } from '@/hooks/useBookings';
@@ -71,18 +70,7 @@ export default function MeetingsPage() {
       </h1>
 
       {/* Controls row */}
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-4">
-          <span
-            title="Not part of this demo"
-            className="flex cursor-default items-center gap-2 rounded-md border border-border bg-white px-3 py-2 text-sm font-medium"
-          >
-            My Calendly <ChevronDown className="h-4 w-4 text-muted-foreground" />
-          </span>
-          <span className="flex items-center gap-2 text-sm font-medium text-foreground">
-            Show buffers <Switch checked onCheckedChange={() => {}} aria-label="Show buffers" />
-          </span>
-        </div>
+      <div className="mb-4 flex items-center justify-end">
         <p className="text-sm text-muted-foreground">
           Displaying {count === 0 ? 0 : 1} – {count} of {count} Events
         </p>
