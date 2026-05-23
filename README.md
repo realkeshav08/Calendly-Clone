@@ -2,10 +2,17 @@
 
 A full-stack scheduling app that replicates Calendly's booking flow: hosts define event types and weekly availability, and invitees pick a slot from a timezone-aware calendar to book a meeting — with double-booking protection and buffers.
 
-> **Live demo**
-> - **Frontend:** https://calendly-clone.keshavkashyap.me
-> - **API health check:** https://calendly-clone-api-s8z2.onrender.com/health
-> - **Sample booking page:** https://calendly-clone.keshavkashyap.me/demo/30min
+> **🔗 Live demo**
+> - **App (entry):** https://calendly-clone.keshavkashyap.me
+> - **Admin dashboard:** https://calendly-clone.keshavkashyap.me/event-types
+> - **Availability:** https://calendly-clone.keshavkashyap.me/availability
+> - **Meetings:** https://calendly-clone.keshavkashyap.me/meetings
+> - **Public host profile:** https://calendly-clone.keshavkashyap.me/demo
+> - **Sample booking pages:** [`/demo/15min`](https://calendly-clone.keshavkashyap.me/demo/15min) · [`/demo/30min`](https://calendly-clone.keshavkashyap.me/demo/30min) · [`/demo/60min`](https://calendly-clone.keshavkashyap.me/demo/60min)
+> - **API (Render):** https://calendly-clone-api-s8z2.onrender.com — [`/health`](https://calendly-clone-api-s8z2.onrender.com/health) returns `{"status":"ok","email":"configured"}`
+> - **GitHub:** https://github.com/realkeshav08/Calendly-Clone
+>
+> _Render's free tier sleeps after ~15 min idle; first request after that takes ~50s to wake._
 
 | Entry page | Booking page | Admin dashboard |
 |---|---|---|
@@ -29,7 +36,7 @@ The root (`/`) is a simple entry page — a short app description plus two links
 | Database | **PostgreSQL (Neon)** | Serverless Postgres, generous free tier |
 | Validation | **Zod** (shared package) | One source of truth for request/response contracts |
 | Logging/Security | **pino, helmet, cors, express-rate-limit** | Structured logs, secure headers, abuse protection |
-| Email | **nodemailer + Resend** | Confirmation/cancellation emails (graceful no-op without a key) |
+| Email | **Resend HTTPS REST API** | Confirmation/cancellation emails via `fetch` to `api.resend.com` (port 443). SMTP is intentionally avoided — Render free tier blocks outbound 25/465/587. Falls back to a `ConsoleChannel` (logs only) when `RESEND_API_KEY` is unset. |
 
 ---
 
@@ -37,7 +44,7 @@ The root (`/`) is a simple entry page — a short app description plus two links
 
 **Core**
 - ✅ Event types — Calendly-style Scheduling page (search, list cards, copy link), create / edit / delete, enable-disable
-- ✅ Availability — weekly hours editor (multiple windows per day) with **List & Calendar views**, timezone per schedule
+- ✅ Availability — weekly hours editor (multiple windows per day) with **List & Calendar views**; the calendar projects weekly hours **and** date overrides, and today/future cells are clickable for quick **"Edit date"** / **"Edit all <Day>s"**. Timezone per schedule.
 - ✅ Public booking page — month calendar with available-day dots, timezone auto-detect, Calendly's signature slot→**Confirm** split interaction, details form
 - ✅ Booking confirmation page + public cancel link
 - ✅ Meetings dashboard — **Upcoming / Past / Date Range** tabs with empty states, cancel
@@ -48,12 +55,12 @@ The root (`/`) is a simple entry page — a short app description plus two links
 
 **Bonus (implemented)**
 - ✅ Fully responsive (mobile hamburger drawer, stacked booking layout)
-- ✅ Multiple availability schedules (pick per event type)
-- ✅ Buffer time before/after (in the slot algorithm + event form)
+- ✅ Multiple availability schedules (pick per event type, **rename / duplicate** from the 3-dot menu)
+- ✅ Buffer time before/after — **baked into the slot grid** (step = `duration + max(buffer)`), so an invitee never sees adjacent slots that conflict via buffer
 - ✅ Date overrides (one-off unavailable days / custom hours)
 - ✅ Rescheduling (marks the old booking `RESCHEDULED`, creates a new one)
 - ✅ Custom invitee questions (stored in `Booking.answers` JSON)
-- ✅ Email notifications (Resend; no-op when unconfigured)
+- ✅ Email notifications — Resend **HTTPS REST API** (verified domain), fire-and-forget so booking responses stay fast; no-op when unconfigured
 
 **Skipped (intentionally)** — real auth, payments, Google Calendar sync, recurring events. See _Assumptions_.
 
@@ -273,7 +280,7 @@ Errors use one envelope: `{ "error": { "code", "message", "fields?" } }`.
 
 - **Layered OOP + SOLID.** Controllers → service classes → repository interfaces → Prisma, wired in a single composition root (`container.ts`). Inheritance (`BaseRepository`, `AppError`), polymorphism (notification channel strategy, error hierarchy), encapsulation (Prisma never leaks past a repository), and Dependency Inversion (services depend on interfaces) — see _Backend layering_ above.
 - **Store UTC, convert at the edge.** Every booking instant is stored in UTC; availability times-of-day are `"HH:mm"` strings in the schedule's timezone. Conversion happens only when rendering or computing slots, using `date-fns-tz` — never raw `Date` math — so DST and the India +5:30 offset stay correct.
-- **Slot generation** (`apps/api/src/utils/slots.ts`): map the invitee's date to the schedule's timezone day → resolve windows (date override beats weekly hours) → step in `durationMinutes` (back-to-back, not a 15-min grid) → convert each candidate to UTC independently (DST-safe) → drop slots overlapping a booking padded by buffers, and slots in the past. Covered by **13 unit tests** including DST spring-forward/fall-back, India offset, buffers, and boundary touching.
+- **Slot generation** (`apps/api/src/utils/slots.ts`): map the invitee's date to the schedule's timezone day → resolve windows (date override beats weekly hours) → step in `durationMinutes + max(bufferBefore, bufferAfter)` so buffer is **baked into the slot grid** (booking one slot never visibly disables a neighbour) → convert each candidate to UTC independently (DST-safe) → drop slots that still conflict with bookings from other events (buffer-padded interval), and slots at or before `now`. Covered by **15 unit tests** including DST spring-forward/fall-back, India half-hour offset, buffer-aware spacing, and boundary touching.
 - **Serializable isolation over a unique constraint.** Booking conflicts are *interval overlaps* (buffers, varying durations), which a unique index on `(hostId, startTime)` can't express. We re-check overlap inside a `Serializable` transaction; a race triggers a Postgres serialization failure → mapped to HTTP 409.
 - **Monorepo + shared Zod.** `packages/shared` is the single source of truth for validation; client and server never disagree on a contract.
 - **Prisma.** Type-safe queries and a real migration history, a natural fit for Postgres.
@@ -293,7 +300,7 @@ Errors use one envelope: `{ "error": { "code", "message", "fields?" } }`.
 - **Secrets** live only in env vars; `.env*` is gitignored (only `.env.example` is committed). The DB connection uses `sslmode=require`.
 - **Bookings are soft-deleted** (status flips), never hard-deleted, so history is preserved and event types with bookings can't be orphaned.
 - **Concurrency** — the double-booking race is closed by a Serializable transaction (see _Key design decisions_).
-- **Dependencies** — `pnpm audit --prod` reports **no known vulnerabilities**. Production deps are kept on patched lines (Next.js 15, React 19, nodemailer 8), with a workspace override forcing a patched `postcss`.
+- **Dependencies** — `pnpm audit --prod` reports **no known vulnerabilities**. Production deps are kept on patched lines (Next.js 15, React 19); a workspace override forces a patched `postcss`. `nodemailer` was removed when the email channel switched to Resend's HTTPS REST API (Render free tier blocks SMTP).
 
 > Note: admin routes are intentionally unauthenticated per the assignment ("assume a default user is logged in"). The `currentUser` middleware is the single seam to add real auth — see below.
 
