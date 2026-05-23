@@ -38,8 +38,16 @@ export function createApp(): Express {
   app.use(express.json({ limit: '64kb' }));
   app.use(pinoHttp({ logger }));
 
-  // Liveness probe for Render / uptime checks.
-  app.get('/health', (_req, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
+  // Liveness probe for Render / uptime checks. Also exposes whether the email
+  // integration is configured (true/false only — no secret leaks) so a quick curl
+  // verifies the env var actually reached the running process.
+  app.get('/health', (_req, res) =>
+    res.json({
+      status: 'ok',
+      time: new Date().toISOString(),
+      email: env.RESEND_API_KEY ? 'configured' : 'not-configured',
+    }),
+  );
 
   // Public, unauthenticated invitee routes.
   app.use('/api/public', publicRouter);
