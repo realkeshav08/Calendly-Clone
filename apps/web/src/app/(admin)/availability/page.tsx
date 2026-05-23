@@ -5,6 +5,10 @@ import { Check, List, CalendarDays, MoreVertical, Pencil, Copy } from 'lucide-re
 import { WeeklyHoursEditor } from '@/components/availability/WeeklyHoursEditor';
 import { DateOverridesEditor } from '@/components/availability/DateOverridesEditor';
 import { AvailabilityCalendar } from '@/components/availability/AvailabilityCalendar';
+import {
+  EditAvailabilityDialog,
+  type EditValues,
+} from '@/components/availability/EditAvailabilityDialog';
 import { TimezoneSelect } from '@/components/availability/TimezoneSelect';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,7 +29,12 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { useSchedules, useUpdateSchedule, useCreateSchedule } from '@/hooks/useAvailability';
+import {
+  useSchedules,
+  useUpdateSchedule,
+  useCreateSchedule,
+  useAddDateOverride,
+} from '@/hooks/useAvailability';
 import { useEventTypes } from '@/hooks/useEventTypes';
 import { cn } from '@/lib/utils';
 import type { WeeklyHourInput } from 'shared';
@@ -44,7 +53,105 @@ export default function AvailabilityPage() {
   const selected = schedules?.find((s) => s.id === selectedId) ?? schedules?.[0];
   const update = useUpdateSchedule(selected?.id ?? '');
   const createSchedule = useCreateSchedule();
+  const addOverride = useAddDateOverride(selected?.id ?? '');
   const activeOn = eventTypes?.filter((e) => e.scheduleId === selected?.id).length ?? 0;
+
+  // ---- Quick-edit (from Calendar view) state --------------------------------
+  const [editOpen, setEditOpen] = useState(false);
+  const [editConfig, setEditConfig] = useState<{
+    mode: 'date' | 'weekday';
+    target: string | number;
+    title: string;
+    prefill: EditValues;
+  } | null>(null);
+
+  const DAY_LONG = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+  /** Pre-fill for editing a single date: existing override > weekly hours > default. */
+  function buildDatePrefill(dateKey: string): EditValues {
+    const override = selected?.dateOverrides.find((o) => o.date.slice(0, 10) === dateKey);
+    if (override) {
+      if (override.isUnavailable || !override.startTime || !override.endTime) {
+        return { startTime: '09:00', endTime: '17:00', isUnavailable: true };
+      }
+      return { startTime: override.startTime, endTime: override.endTime, isUnavailable: false };
+    }
+    const [y, m, d] = dateKey.split('-').map(Number);
+    const dow = new Date(y, m - 1, d).getDay();
+    const weekly = hours
+      .filter((h) => h.dayOfWeek === dow)
+      .sort((a, b) => a.startTime.localeCompare(b.startTime))[0];
+    return weekly
+      ? { startTime: weekly.startTime, endTime: weekly.endTime, isUnavailable: false }
+      : { startTime: '09:00', endTime: '17:00', isUnavailable: false };
+  }
+
+  /** Pre-fill for editing a weekday: first existing window > unavailable if none. */
+  function buildWeekdayPrefill(dow: number): EditValues {
+    const weekly = hours
+      .filter((h) => h.dayOfWeek === dow)
+      .sort((a, b) => a.startTime.localeCompare(b.startTime))[0];
+    return weekly
+      ? { startTime: weekly.startTime, endTime: weekly.endTime, isUnavailable: false }
+      : { startTime: '09:00', endTime: '17:00', isUnavailable: true };
+  }
+
+  function handleEditDate(dateKey: string) {
+    if (!selected) return;
+    const [y, m, d] = dateKey.split('-').map(Number);
+    const long = new Date(y, m - 1, d).toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+    });
+    setEditConfig({
+      mode: 'date',
+      target: dateKey,
+      title: `Edit ${long}`,
+      prefill: buildDatePrefill(dateKey),
+    });
+    setEditOpen(true);
+  }
+
+  function handleEditWeekday(dow: number) {
+    if (!selected) return;
+    setEditConfig({
+      mode: 'weekday',
+      target: dow,
+      title: `Edit all ${DAY_LONG[dow]}s`,
+      prefill: buildWeekdayPrefill(dow),
+    });
+    setEditOpen(true);
+  }
+
+  /**
+   * Apply quick-edit changes. For a single date we upsert a date override
+   * (overrides win over weekly hours per the slot-generation precedence); for a
+   * weekday we replace every entry for that day-of-week with the new window.
+   */
+  async function handleApply(values: EditValues) {
+    if (!editConfig || !selected) return;
+    if (editConfig.mode === 'date') {
+      await addOverride.mutateAsync({
+        date: editConfig.target as string,
+        isUnavailable: values.isUnavailable,
+        startTime: values.isUnavailable ? null : values.startTime,
+        endTime: values.isUnavailable ? null : values.endTime,
+      });
+    } else {
+      const dow = editConfig.target as number;
+      const others = hours.filter((h) => h.dayOfWeek !== dow);
+      const next = values.isUnavailable
+        ? others
+        : [
+            ...others,
+            { dayOfWeek: dow, startTime: values.startTime, endTime: values.endTime },
+          ];
+      await update.mutateAsync({ weeklyHours: next });
+      setHours(next);
+    }
+    setEditOpen(false);
+  }
 
   const [renameOpen, setRenameOpen] = useState(false);
   const [renameValue, setRenameValue] = useState('');
@@ -233,10 +340,23 @@ export default function AvailabilityPage() {
                 hours={hours}
                 dateOverrides={selected.dateOverrides}
                 timezone={timezone}
+                onEditDate={handleEditDate}
+                onEditWeekday={handleEditWeekday}
               />
             )}
           </div>
         </div>
+      )}
+
+      {editConfig && (
+        <EditAvailabilityDialog
+          open={editOpen}
+          title={editConfig.title}
+          prefill={editConfig.prefill}
+          isPending={addOverride.isPending || update.isPending}
+          onClose={() => setEditOpen(false)}
+          onApply={handleApply}
+        />
       )}
 
       <Dialog open={renameOpen} onOpenChange={setRenameOpen}>

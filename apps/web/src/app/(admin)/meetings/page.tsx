@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { HelpCircle, ChevronDown, Upload, SlidersHorizontal } from 'lucide-react';
+import { HelpCircle, ChevronDown } from 'lucide-react';
 import { MeetingsList } from '@/components/meetings/MeetingsList';
 import { DateRangePicker, type DateRange } from '@/components/meetings/DateRangePicker';
 import { cn } from '@/lib/utils';
@@ -43,8 +43,6 @@ export default function MeetingsPage() {
             empty: 'No Events in this range',
           };
 
-  const count = active.data?.length ?? 0;
-
   const tabBtn = (key: Tab, label: string) => (
     <button
       type="button"
@@ -69,34 +67,13 @@ export default function MeetingsPage() {
         Meetings <HelpCircle className="h-5 w-5 text-muted-foreground" />
       </h1>
 
-      {/* Controls row */}
-      <div className="mb-4 flex items-center justify-end">
-        <p className="text-sm text-muted-foreground">
-          Displaying {count === 0 ? 0 : 1} – {count} of {count} Events
-        </p>
-      </div>
-
-      {/* Tabs + actions */}
+      {/* Tabs */}
       <div className="rounded-xl border border-border bg-white p-5">
-        <div className="mb-4 flex items-center justify-between border-b border-border">
+        <div className="mb-4 flex items-center border-b border-border">
           <div className="flex gap-6">
             {tabBtn('upcoming', 'Upcoming')}
             {tabBtn('past', 'Past')}
             {tabBtn('range', 'Date Range')}
-          </div>
-          <div className="flex items-center gap-2 pb-3">
-            <span
-              title="Not part of this demo"
-              className="flex cursor-default items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground"
-            >
-              <Upload className="h-4 w-4" /> Export
-            </span>
-            <span
-              title="Not part of this demo"
-              className="flex cursor-default items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground"
-            >
-              <SlidersHorizontal className="h-4 w-4" /> Filter
-            </span>
           </div>
         </div>
 

@@ -3,9 +3,17 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Repeat, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { dateKeyFromParts } from '@/lib/time';
+import { dateKeyFromParts, toDateKey } from '@/lib/time';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
 import type { WeeklyHourInput } from 'shared';
 import type { DateOverride } from '@/types/api';
+
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 /** "09:00" → "9:00am", "17:30" → "5:30pm". */
 function to12h(hm: string): string {
@@ -16,20 +24,26 @@ function to12h(hm: string): string {
 }
 
 /**
- * Calendar view of an availability schedule (Calendly's "Calendar" tab): a month
- * grid projecting the recurring weekly hours onto each date AND any date-specific
- * overrides, so it reflects every change saved in the List view. A date override
- * wins over the weekly hours for that day (custom hours or "Unavailable"), matching
- * the slot-generation logic. Read-only — editing happens in the List view.
+ * Calendar view of an availability schedule (Calendly's "Calendar" tab). Projects
+ * recurring weekly hours plus date-specific overrides onto a month grid so it
+ * reflects everything saved in the List view. Today + future cells are clickable
+ * — opening a small "Edit date" / "Edit all <Day>s" menu that drives quick edits
+ * via the parent. Past cells are read-only.
  */
 export function AvailabilityCalendar({
   hours,
   dateOverrides,
   timezone,
+  onEditDate,
+  onEditWeekday,
 }: {
   hours: WeeklyHourInput[];
   dateOverrides: DateOverride[];
   timezone: string;
+  /** Open the edit dialog for a single date (`YYYY-MM-DD`) — creates/updates a date override. */
+  onEditDate: (dateKey: string) => void;
+  /** Open the edit dialog for an entire day-of-week (0=Sun … 6=Sat). */
+  onEditWeekday: (dayOfWeek: number) => void;
 }) {
   const [viewMonth, setViewMonth] = useState(() => new Date());
   const year = viewMonth.getFullYear();
@@ -37,13 +51,14 @@ export function AvailabilityCalendar({
   const firstWeekday = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const monthLabel = viewMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const todayKey = toDateKey(new Date(), timezone);
 
   const weeklyByDay = (dow: number) =>
     hours
       .filter((h) => h.dayOfWeek === dow)
       .sort((a, b) => a.startTime.localeCompare(b.startTime));
 
-  /** Resolve what a given date shows: a date override (if any) beats weekly hours. */
+  /** Resolve what a given date shows — date override beats weekly hours. */
   function resolveDay(dateKey: string, dow: number) {
     const override = dateOverrides.find((o) => o.date.slice(0, 10) === dateKey);
     if (override) {
@@ -100,12 +115,18 @@ export function AvailabilityCalendar({
         {cells.map((day, i) => {
           if (day === null)
             return (
-              <div key={`b-${i}`} className="min-h-[92px] border-b border-r border-border bg-gray-50/50" />
+              <div
+                key={`b-${i}`}
+                className="min-h-[92px] border-b border-r border-border bg-gray-50/50"
+              />
             );
           const dow = new Date(year, month, day).getDay();
-          const { kind, windows } = resolveDay(dateKeyFromParts(year, month, day), dow);
-          return (
-            <div key={day} className="min-h-[92px] border-b border-r border-border p-1.5">
+          const dateKey = dateKeyFromParts(year, month, day);
+          const isPast = dateKey < todayKey;
+          const { kind, windows } = resolveDay(dateKey, dow);
+
+          const cellInner = (
+            <>
               <div className="mb-1 flex items-center justify-between">
                 <span className="text-sm font-medium text-foreground">{day}</span>
                 {kind === 'weekly' && windows.length > 0 && (
@@ -132,7 +153,42 @@ export function AvailabilityCalendar({
                   ))
                 )}
               </div>
-            </div>
+            </>
+          );
+
+          // Past dates are read-only and visually darkened (matches Calendly's
+          // calendar where past cells get a gray fill); today + future open the
+          // quick-edit menu.
+          if (isPast) {
+            return (
+              <div
+                key={day}
+                className="min-h-[92px] border-b border-r border-border bg-gray-100 p-1.5 text-muted-foreground"
+              >
+                {cellInner}
+              </div>
+            );
+          }
+          return (
+            <DropdownMenu key={day}>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  aria-label={`Edit availability for ${dateKey}`}
+                  className="block min-h-[92px] border-b border-r border-border p-1.5 text-left transition hover:bg-brand-soft/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand"
+                >
+                  {cellInner}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" sideOffset={2}>
+                <DropdownMenuItem onClick={() => onEditDate(dateKey)}>
+                  <Pencil className="h-4 w-4" /> Edit date
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onEditWeekday(dow)}>
+                  <Repeat className="h-4 w-4" /> Edit all {DAY_NAMES[dow]}s
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           );
         })}
       </div>
