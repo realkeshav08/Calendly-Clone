@@ -98,6 +98,17 @@ export function generateAvailableSlotsForDate(params: GenerateSlotsParams): stri
   const { eventType, schedule, date, inviteeTimezone, existingBookings, now = new Date() } = params;
   const { durationMinutes, bufferBeforeMins, bufferAfterMins } = eventType;
 
+  /**
+   * Spacing between consecutive offered slot starts. We add `max(buffer)` (not
+   * the sum) because the gap between two same-event meetings must satisfy BOTH
+   * the previous meeting's after-buffer AND the next meeting's before-buffer —
+   * those two requirements overlap, so the minimum required gap is the larger
+   * of the two. This also means the buffer is *built into the slot grid*: an
+   * invitee never sees adjacent slots that conflict via buffer, so booking one
+   * never visibly disables a neighbor.
+   */
+  const slotStep = durationMinutes + Math.max(bufferBeforeMins, bufferAfterMins);
+
   // Step 1: which schedule-tz day does the invitee's selected day correspond to?
   const noonInviteeInstant = zonedWallTimeToUtc(date, '12:00', inviteeTimezone);
   const scheduleDate = utcToZonedDateString(noonInviteeInstant, schedule.timezone);
@@ -112,11 +123,13 @@ export function generateAvailableSlotsForDate(params: GenerateSlotsParams): stri
     const windowStartMin = hmToMinutes(window.startTime);
     const windowEndMin = hmToMinutes(window.endTime);
 
-    // Step 3: back-to-back candidate starts that still fit fully inside the window.
+    // Step 3: candidate starts spaced by `slotStep` (duration + max-buffer) that
+    // still fit fully inside the window. Buffer is part of the grid, not just the
+    // conflict check, so neighbours are never blocked by each other's buffer.
     for (
       let startMin = windowStartMin;
       startMin + durationMinutes <= windowEndMin;
-      startMin += durationMinutes
+      startMin += slotStep
     ) {
       const startHm = minutesToHm(startMin);
 

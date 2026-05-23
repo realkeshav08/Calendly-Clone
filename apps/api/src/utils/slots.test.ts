@@ -125,15 +125,30 @@ describe('generateAvailableSlotsForDate', () => {
     expect(local).toContain('09:30');
   });
 
-  it('blocks adjacent slots when buffers extend the guarded interval', () => {
-    // Booking 11:00–11:30 IST with 15-min buffers on both sides should knock out
-    // the 10:30 slot (ends 11:00, +after-buffer of booking reaches back) and 11:30.
+  it('spaces slots by duration + max(buffer) so the buffer is built into the grid', () => {
+    // 15-min event with 5-min buffers (both sides). Step = 15 + max(5,5) = 20.
+    // Window 09:00–17:00 → 09:00, 09:20, 09:40, 10:00, …
+    const slots = generateAvailableSlotsForDate({
+      eventType: event({ durationMinutes: 15, bufferBeforeMins: 5, bufferAfterMins: 5 }),
+      schedule: weekdaySchedule('Asia/Kolkata'),
+      date: '2026-03-12',
+      inviteeTimezone: 'Asia/Kolkata',
+      existingBookings: [],
+      now: NOW,
+    });
+    const local = asLocal(slots, 'Asia/Kolkata');
+    expect(local.slice(0, 4)).toEqual(['09:00', '09:20', '09:40', '10:00']);
+  });
+
+  it('booking a slot does not knock out its buffer-grid neighbours', () => {
+    // With the buffer baked into the grid, booking 09:20 must leave 09:00 and 09:40
+    // available — the old "select 9:30 → 9:15 and 9:45 disappear" glitch is gone.
     const booking: ExistingBooking = {
-      startTime: new Date('2026-03-12T05:30:00Z'), // 11:00 IST
-      endTime: new Date('2026-03-12T06:00:00Z'), // 11:30 IST
+      startTime: new Date('2026-03-12T03:50:00Z'), // 09:20 IST
+      endTime: new Date('2026-03-12T04:05:00Z'), // 09:35 IST (15-min meeting)
     };
     const slots = generateAvailableSlotsForDate({
-      eventType: event({ bufferBeforeMins: 15, bufferAfterMins: 15 }),
+      eventType: event({ durationMinutes: 15, bufferBeforeMins: 5, bufferAfterMins: 5 }),
       schedule: weekdaySchedule('Asia/Kolkata'),
       date: '2026-03-12',
       inviteeTimezone: 'Asia/Kolkata',
@@ -141,10 +156,35 @@ describe('generateAvailableSlotsForDate', () => {
       now: NOW,
     });
     const local = asLocal(slots, 'Asia/Kolkata');
-    expect(local).not.toContain('11:00');
-    expect(local).not.toContain('11:30'); // guarded start (11:15) overlaps booking end-ish
-    expect(local).not.toContain('10:30'); // guarded end (11:15) overlaps booking start
-    expect(local).toContain('10:00');
+    expect(local).toContain('09:00');
+    expect(local).toContain('09:40');
+    expect(local).not.toContain('09:20'); // the booked slot itself
+  });
+
+  it('still blocks slots that genuinely conflict with a booking via buffer', () => {
+    // 30-min event with 15-min buffers; step = 30 + 15 = 45.
+    // Candidates 09:00, 09:45, 10:30, 11:15, 12:00…
+    // A booking 11:00–11:30 (e.g. from a different event) knocks out 10:30
+    // (its after-buffer extends to 11:15, overlapping the booking) and 11:15
+    // (its before-buffer extends back to 11:00, overlapping the booking start).
+    const booking: ExistingBooking = {
+      startTime: new Date('2026-03-12T05:30:00Z'), // 11:00 IST
+      endTime: new Date('2026-03-12T06:00:00Z'), // 11:30 IST
+    };
+    const slots = generateAvailableSlotsForDate({
+      eventType: event({ durationMinutes: 30, bufferBeforeMins: 15, bufferAfterMins: 15 }),
+      schedule: weekdaySchedule('Asia/Kolkata'),
+      date: '2026-03-12',
+      inviteeTimezone: 'Asia/Kolkata',
+      existingBookings: [booking],
+      now: NOW,
+    });
+    const local = asLocal(slots, 'Asia/Kolkata');
+    expect(local).toContain('09:00');
+    expect(local).toContain('09:45');
+    expect(local).not.toContain('10:30');
+    expect(local).not.toContain('11:15');
+    expect(local).toContain('12:00');
   });
 
   it('handles US spring-forward DST: 09:00 ET still maps to a valid wall clock', () => {
