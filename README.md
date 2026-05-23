@@ -2,10 +2,10 @@
 
 A full-stack scheduling app that replicates Calendly's booking flow: hosts define event types and weekly availability, and invitees pick a slot from a timezone-aware calendar to book a meeting — with double-booking protection and buffers.
 
-> **Live demo** _(fill in after deploy)_
-> - **Frontend:** https://YOUR-APP.vercel.app
-> - **API health check:** https://YOUR-API.onrender.com/health
-> - **Sample booking page:** https://YOUR-APP.vercel.app/demo/30min
+> **Live demo**
+> - **Frontend:** https://calendly-clone.keshavkashyap.me
+> - **API health check:** https://calendly-clone-api-s8z2.onrender.com/health
+> - **Sample booking page:** https://calendly-clone.keshavkashyap.me/demo/30min
 
 | Entry page | Booking page | Admin dashboard |
 |---|---|---|

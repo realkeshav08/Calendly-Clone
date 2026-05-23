@@ -78,7 +78,9 @@ export class BookingService {
       answers: input.answers ? (input.answers as unknown as Prisma.InputJsonValue) : undefined,
     });
 
-    await this.notifications.sendBookingConfirmation(booking);
+    // Fire-and-forget: email is best-effort, so we never block the booking
+    // response on SMTP latency (the channel swallows its own errors).
+    void this.notifications.sendBookingConfirmation(booking).catch(() => {});
     return booking;
   }
 
@@ -96,7 +98,8 @@ export class BookingService {
       cancelledAt: new Date(),
       cancellationReason: input.cancellationReason ?? null,
     });
-    await this.notifications.sendBookingCancellation(updated);
+    // Fire-and-forget (see create) — don't block the response on email.
+    void this.notifications.sendBookingCancellation(updated).catch(() => {});
     return updated;
   }
 
